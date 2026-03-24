@@ -1,2 +1,4 @@
 def split_key(key, total, required):
-    return [key for _ in range(total)]
+    # Simple simulation (same key distributed)
+    shares = [key for _ in range(total)]
+    return shares

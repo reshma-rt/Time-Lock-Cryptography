@@ -1,4 +1,7 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 
-UNLOCK_TIME = datetime.now() + timedelta(seconds=30)
+# Set a fixed time manually (adjust to your current time + 1 minute)
+UNLOCK_TIME = datetime(2026, 3, 24, 16, 30, 0)
+
 REQUIRED_SHARES = 3
+VALID_LOCATION = "Chennai"

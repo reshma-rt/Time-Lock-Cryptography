@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chronos | Advanced Time-Lock Cryptography</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- Include Chart JS for visual performance metric graphs-->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="background-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+    
+    <div class="container">
+        <header>
+            <h1>Chronos Advanced</h1>
+            <p>Dual-Security AES-256 EAX Time-Lock Enigma</p>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <nav class="tabs">
+            <button class="tab-btn active" data-tab="encrypt">Encrypt Vault</button>
+            <button class="tab-btn" data-tab="decrypt">Decrypt Vault</button>
+            <button class="tab-btn" data-tab="dashboard">Performance Dashboard</button>
+        </nav>
+
+        <main>
+            <!-- Encrypt Tab -->
+            <section id="encrypt" class="card tab-content active-tab">
+                <div class="toggle-group">
+                    <button class="toggle-btn active" data-mode="file">Encrypt Protocol: File</button>
+                    <button class="toggle-btn" data-mode="text">Encrypt Protocol: Text</button>
+                </div>
+
+                <form id="encrypt-form">
+                    <!-- File Input -->
+                    <div class="form-group" id="file-input-group">
+                        <label for="enc-file">Select Target File</label>
+                        <input type="file" id="enc-file" name="file">
+                    </div>
+
+                    <!-- Text Input -->
+                    <div class="form-group hidden" id="text-input-group">
+                        <label for="enc-text">Secret Text Message</label>
+                        <textarea id="enc-text" rows="4" placeholder="Enter message to strictly seal via EAX payload padding..."></textarea>
+                    </div>
+
+                    <!-- Options -->
+                    <div class="form-group">
+                        <label for="delay">Mathematical Delay Constraint (Seconds/Iterations)</label>
+                        <input type="number" id="delay" min="1" max="3600" value="10" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="enc-password">Optional Dual Security Password Parameter</label>
+                        <input type="password" id="enc-password" placeholder="Leave explicitly empty for pure unassisted mathematical delays...">
+                    </div>
+                    
+                    <button type="submit" class="btn primary-btn" id="encrypt-btn">
+                        <span class="btn-text">Compute Hash & Deploy Wrapped .enc Envelope</span>
+                        <div class="spinner hidden"></div>
+                    </button>
+                    <div id="encrypt-message" class="message hidden"></div>
+                </form>
+            </section>
+
+            <!-- Decrypt Tab -->
+            <section id="decrypt" class="card tab-content hidden">
+                <h2 style="margin-bottom: 5px;">Extract Enveloped Payload</h2>
+                <p style="color:var(--text-muted); margin-bottom: 20px;">Mount a `.enc` sequence file to query local database nodes for mathematical alignment status.</p>
+                <form id="decrypt-form">
+                    <div class="form-group" style="padding: 10px; border: 1px dashed var(--border); border-radius: 10px;">
+                        <label for="dec-file">Select Local .enc Source Payload</label>
+                        <input type="file" id="dec-file" name="file" accept=".enc" required>
+                    </div>
+                    
+                    <div class="form-group hidden" id="dec-password-group" style="margin-top:20px;">
+                        <label for="dec-password" style="color:var(--locked);">System flags this payload as Dual Secure</label>
+                        <input type="password" id="dec-password" placeholder="Passkey Required To Extract Base Payload..." style="border-color:var(--locked);">
+                    </div>
+                    
+                    <div id="countdown-box" class="hidden" style="text-align:center; margin: 25px 0; background:rgba(0,0,0,0.3); padding:15px; border-radius:15px;">
+                        Time lock cycle: <br>
+                        <span class="timer" id="dec-timer">--:--:--</span>
+                    </div>
+
+                    <!-- Asynchronous Real-Time Progress UI Feedback Panel -->
+                    <div id="progress-box" class="hidden" style="margin-top: 25px; padding: 20px; background: rgba(0,0,0,0.3); border-radius:15px; border: 1px solid var(--border);">
+                        <label style="color: var(--primary);">Synchronous Processing Metric Load:</label>
+                        <div class="progress-bar-container" style="margin-top:10px;">
+                            <div class="progress-bar-fill" id="progress-fill" style="width: 0%;"></div>
+                        </div>
+                        <div style="text-align: right; color: #fff; font-family: monospace; font-size: 1.1em; margin-bottom:15px; font-weight:bold;" id="progress-text">0.0%</div>
+                        
+                        <label style="color: var(--primary);">Isolated Core Thread Sequence Logs:</label>
+                        <textarea id="dec-logs" rows="6" readonly style="margin-top:10px;"></textarea>
+                    </div>
+
+                    <div id="dec-text-box" class="hidden" style="margin-top: 25px;">
+                        <label style="color:var(--unlocked);">Recovered Secret Data [Verified via Pure SHA256 Stream]:</label>
+                        <textarea id="dec-text-output" rows="5" readonly style="border-color:var(--unlocked); background:rgba(46, 160, 67, 0.05);"></textarea>
+                    </div>
+                    
+                    <div id="decryption-ready-box" class="hidden" style="margin-top: 20px;">
+                        <button type="button" class="btn action-btn" id="download-result-btn" style="background:linear-gradient(135deg, #2ea043, #238636); color:#fff; border:none; padding:15px; font-size:1.1rem; width:100%; box-shadow: 0 0 15px rgba(46, 160, 67, 0.4);">Download SHA256 Validated Binary File</button>
+                    </div>
+
+                    <div style="margin-top:20px;"></div>
+                    <button type="submit" class="btn primary-btn decrypt-btn" id="decrypt-btn" disabled>
+                        <span class="btn-text">Initiate Time-Lock Background Reversal Process</span>
+                        <div class="spinner hidden"></div>
+                    </button>
+                    <div id="decrypt-message" class="message hidden"></div>
+                </form>
+            </section>
+            
+
+
+            <!-- Dashboard Tab (New) -->
+            <section id="dashboard" class="tab-content hidden">
+                <h2 class="dashboard-title">Performance Dashboard</h2>
+                <p class="dashboard-subtitle">
+                    Real-time telemetry, historical comparisons, and multi-delay benchmarks
+                    for the Rivest-Shamir-Wagner time-lock puzzle solver.
+                </p>
+
+                <!-- ── Live/Recent Solver Telemetry (Moved from Decrypt tab) ── -->
+                <section class="dash-section">
+                    <div id="perf-graphs-box" class="hidden perf-graphs-panel" style="margin-top: 0">
+                      <!-- Header row -->
+                      <div class="perf-graphs-header">
+                        <span class="perf-graphs-title">
+                          <svg width="14" height="14" viewBox="0 0 16 16" fill="#58a6ff" style="vertical-align:-2px;margin-right:6px">
+                            <path d="M1 11l3-4 3 2 3-6 3 5"/>
+                            <path d="M1 11l3-4 3 2 3-6 3 5" fill="none" stroke="#58a6ff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                          </svg>
+                          Last Solver Run Telemetry
+                        </span>
+                        <button id="graph-poll-btn" class="ghost-btn">↺ Refresh</button>
+                      </div>
+                      <p id="graph-status-msg" class="perf-status-msg">Run a decryption to view real-time telemetry here…</p>
+
+                      <!-- Live sparklines (shown during solve) -->
+                      <div class="sparkline-grid">
+                        <div class="sparkline-card">
+                          <p class="sparkline-label" style="color:#58a6ff">Completion % — Live</p>
+                          <canvas id="live-completion" height="80"></canvas>
+                        </div>
+                        <div class="sparkline-card">
+                          <p class="sparkline-label" style="color:#f0883e">CPU Usage % — Live</p>
+                          <canvas id="live-cpu" height="80"></canvas>
+                        </div>
+                        <div class="sparkline-card">
+                          <p class="sparkline-label" style="color:#3fb950">Iterations — Live</p>
+                          <canvas id="live-iterations" height="80"></canvas>
+                        </div>
+                      </div>
+
+                      <!-- Static PNG graphs (shown after solve completes) -->
+                      <div class="static-graphs-grid">
+                        <div class="graph-card hidden">
+                          <p class="graph-card-label" style="color:#58a6ff">Completion % vs Time</p>
+                          <img id="graph-img-completion" src="" alt="Completion graph" class="graph-img" />
+                        </div>
+                        <div class="graph-card hidden">
+                          <p class="graph-card-label" style="color:#f0883e">CPU Usage % vs Time</p>
+                          <img id="graph-img-cpu" src="" alt="CPU usage graph" class="graph-img" />
+                        </div>
+                        <div class="graph-card hidden">
+                          <p class="graph-card-label" style="color:#3fb950">Iterations vs Time</p>
+                          <img id="graph-img-iterations" src="" alt="Iterations graph" class="graph-img" />
+                        </div>
+                        <div class="graph-card hidden">
+                          <p class="graph-card-label" style="color:#8957e5">Remaining Time Prediction</p>
+                          <img id="graph-img-remaining" src="" alt="Remaining graph" class="graph-img" />
+                        </div>
+                        <div class="graph-card hidden" style="grid-column: 1 / -1">
+                          <p class="graph-card-label" style="color:#d29922">AES-EAX vs Time-Lock Comparison</p>
+                          <img id="graph-img-comparison" src="" alt="Comparison graph" class="graph-img" />
+                        </div>
+                      </div>
+                    </div>
+                </section>
+
+                <!-- ── Historical Chart (existing Chart.js graph) ───────────────────────── -->
+                <section class="dash-section">
+                    <h3 class="dash-section-title">Historical Solver Runs</h3>
+                    <p class="dash-section-sub">Target delay vs actual computation time across all recorded decryptions.</p>
+                    <div class="chartjs-wrap">
+                      <canvas id="perfChart"></canvas>
+                    </div>
+                </section>
+
+                <!-- ── Multi-Delay Benchmark ─────────────────────────────────────────────── -->
+                <section class="dash-section">
+                    <h3 class="dash-section-title">Multi-Delay Benchmark</h3>
+                    <p class="dash-section-sub">
+                      Run fresh puzzles at several delay targets and plot how computation time scales.
+                      <strong>Note:</strong> benchmark runs in a background thread — page stays responsive.
+                    </p>
+
+                    <!-- Delay selector pills -->
+                    <div class="delay-picker">
+                      <span class="delay-picker-label">Quick delays (s):</span>
+                      <button class="delay-pill active" data-delay="1">1s</button>
+                      <button class="delay-pill active" data-delay="5">5s</button>
+                      <button class="delay-pill" data-delay="10">10s</button>
+                      <button class="delay-pill" data-delay="20">20s</button>
+                      <button class="delay-pill" data-delay="30">30s</button>
+                    </div>
+
+                    <div class="custom-delay-row">
+                      <label class="custom-delay-label" for="custom-delays">Custom (comma-separated):</label>
+                      <input id="custom-delays" type="text" placeholder="e.g. 2, 8, 15"
+                             class="custom-delay-input" />
+                    </div>
+
+                    <button id="benchmark-start-btn" class="primary-btn" style="margin-top:1rem">
+                      ▶ Run Benchmark
+                    </button>
+                    <p id="benchmark-msg" class="hidden" style="margin-top:0.75rem; font-size:0.85rem"></p>
+
+                    <div id="benchmark-graphs-box" class="hidden" style="margin-top:1.25rem">
+                      <div id="benchmark-img-wrap" class="hidden">
+                        <p class="graph-card-label" style="color:#58a6ff">
+                          Target Delay vs Actual CPU Time
+                        </p>
+                        <img id="benchmark-img" src="" alt="Benchmark graph" class="graph-img" />
+                      </div>
+                    </div>
+                </section>
+
+                <!-- ── About ──────────────────────────────────────────────────────────────── -->
+                <section class="dash-section">
+                    <h3 class="dash-section-title">About the Teleplexity Engine</h3>
+                    <div class="about-grid">
+                      <div class="about-card">
+                        <div class="about-icon">⏱</div>
+                        <h4>Non-Blocking Sampling</h4>
+                        <p>A dedicated CPU-sampling daemon thread fires every 500 ms. The solver loop
+                           never waits for psutil reads.</p>
+                      </div>
+                      <div class="about-card">
+                        <div class="about-icon">📊</div>
+                        <h4>5 Graph Types</h4>
+                        <p>Completion %, CPU Usage, Iterations, Remaining Time Prediction, and AES vs Time-Lock comparison.</p>
+                      </div>
+                      <div class="about-card">
+                        <div class="about-icon">🔀</div>
+                        <h4>Three-Thread Design</h4>
+                        <p>Solver thread → CPU sampler daemon → graph renderer daemon.
+                           Flask workers are never blocked at any stage.</p>
+                      </div>
+                      <div class="about-card">
+                        <div class="about-icon">📏</div>
+                        <h4>AES Baseline</h4>
+                        <p>After puzzle completion, a plain AES-EAX decrypt is timed to give a
+                           meaningful comparison against the time-lock overhead.</p>
+                      </div>
+                    </div>
+                </section>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Dashboard CSS injected via templates/dashboard_panels.html instructions -->
+    <style>
+    /* ── Perf graphs panel (dashboard tab) ──────────────────────────────────────── */
+    .perf-graphs-panel {
+      margin-top: 1.75rem;
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 10px;
+      padding: 1.25rem 1.4rem;
+    }
+
+    .perf-graphs-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.5rem;
+    }
+
+    .perf-graphs-title {
+      color: #c9d1d9;
+      font-size: 0.92rem;
+      font-family: ui-monospace, SFMono-Regular, monospace;
+      font-weight: 600;
+    }
+
+    .perf-status-msg {
+      color: #8b949e;
+      font-size: 0.78rem;
+      margin: 0 0 1rem;
+    }
+
+    .ghost-btn {
+      background: #21262d;
+      color: #8b949e;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      padding: 3px 11px;
+      font-size: 0.78rem;
+      cursor: pointer;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .ghost-btn:hover { color: #c9d1d9; border-color: #8b949e; }
+
+    /* Sparklines */
+    .sparkline-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 0.85rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .sparkline-card {
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 0.75rem 0.9rem;
+    }
+
+    .sparkline-label {
+      font-size: 0.75rem;
+      font-family: ui-monospace, SFMono-Regular, monospace;
+      margin: 0 0 0.5rem;
+    }
+
+    /* Static graph grid */
+    .static-graphs-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 1rem;
+    }
+
+    .graph-card {
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 0.85rem;
+    }
+
+    .graph-card-label {
+      font-size: 0.78rem;
+      font-family: ui-monospace, SFMono-Regular, monospace;
+      margin: 0 0 0.6rem;
+    }
+
+    .graph-img {
+      width: 100%;
+      border-radius: 6px;
+      display: block;
+    }
+
+    /* ── Dashboard tab ─────────────────────────────────────────────────────────── */
+    .dashboard-title {
+      color: #c9d1d9;
+      font-size: 1.2rem;
+      font-family: ui-monospace, SFMono-Regular, monospace;
+      margin: 0 0 0.35rem;
+    }
+
+    .dashboard-subtitle {
+      color: #8b949e;
+      font-size: 0.85rem;
+      margin: 0 0 1.75rem;
+      max-width: 640px;
+      line-height: 1.55;
+    }
+
+    .dash-section {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 10px;
+      padding: 1.25rem 1.4rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .dash-section-title {
+      color: #c9d1d9;
+      font-size: 0.95rem;
+      font-family: ui-monospace, SFMono-Regular, monospace;
+      font-weight: 600;
+      margin: 0 0 0.3rem;
+    }
+
+    .dash-section-sub {
+      color: #8b949e;
+      font-size: 0.82rem;
+      margin: 0 0 1rem;
+      line-height: 1.5;
+    }
+
+    .chartjs-wrap { position: relative; height: 220px; }
+
+    /* Delay picker */
+    .delay-picker {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .delay-picker-label {
+      color: #8b949e;
+      font-size: 0.82rem;
+    }
+
+    .delay-pill {
+      background: #21262d;
+      color: #8b949e;
+      border: 1px solid #30363d;
+      border-radius: 20px;
+      padding: 3px 13px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .delay-pill.active {
+      background: rgba(88, 166, 255, 0.15);
+      color: #58a6ff;
+      border-color: #58a6ff;
+    }
+
+    .delay-pill:hover { border-color: #58a6ff; color: #58a6ff; }
+
+    .custom-delay-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .custom-delay-label {
+      color: #8b949e;
+      font-size: 0.82rem;
+    }
+
+    .custom-delay-input {
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      color: #c9d1d9;
+      padding: 5px 10px;
+      font-size: 0.82rem;
+      font-family: ui-monospace, SFMono-Regular, monospace;
+      width: 200px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .custom-delay-input:focus { border-color: #58a6ff; }
+
+    /* About grid */
+    .about-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 0.85rem;
+    }
+
+    .about-card {
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 1rem;
+    }
+
+    .about-icon {
+      font-size: 1.4rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .about-card h4 {
+      color: #c9d1d9;
+      font-size: 0.85rem;
+      font-family: ui-monospace, SFMono-Regular, monospace;
+      margin: 0 0 0.4rem;
+    }
+
+    .about-card p {
+      color: #8b949e;
+      font-size: 0.78rem;
+      line-height: 1.5;
+      margin: 0;
+    }
+    </style>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,422 @@
+<!-- ╔══════════════════════════════════════════════════════════════════════════╗
+     ║  CHRONOS PERFORMANCE DASHBOARD — HTML PANELS                          ║
+     ║                                                                        ║
+     ║  HOW TO INTEGRATE                                                      ║
+     ║  ─────────────────                                                     ║
+     ║  1. DECRYPT TAB: paste Block A (Live Graphs Panel) directly below      ║
+     ║     your existing #decryption-ready-box div.                           ║
+     ║                                                                        ║
+     ║  2. ADD A NEW TAB: add a tab button for data-tab="dashboard", then     ║
+     ║     paste Block B (Dashboard Tab Content) as a new .tab-content div.  ║
+     ║                                                                        ║
+     ║  3. STYLE: paste Block C (CSS) into your <style> block or stylesheet. ║
+     ╚══════════════════════════════════════════════════════════════════════════╝ -->
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     BLOCK A — Live Graphs Panel (goes inside the Decrypt tab)
+     Paste below: <div id="decryption-ready-box" ...>...</div>
+     ═══════════════════════════════════════════════════════════════════════════ -->
+
+<div id="perf-graphs-box" class="hidden perf-graphs-panel">
+
+  <!-- Header row -->
+  <div class="perf-graphs-header">
+    <span class="perf-graphs-title">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="#58a6ff" style="vertical-align:-2px;margin-right:6px">
+        <path d="M1 11l3-4 3 2 3-6 3 5"/>
+        <path d="M1 11l3-4 3 2 3-6 3 5" fill="none" stroke="#58a6ff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Solver Performance Telemetry
+    </span>
+    <button id="graph-poll-btn" class="ghost-btn">↺ Refresh</button>
+  </div>
+  <p id="graph-status-msg" class="perf-status-msg">Waiting for renderer…</p>
+
+  <!-- Live sparklines (shown during solve) -->
+  <div class="sparkline-grid">
+
+    <div class="sparkline-card">
+      <p class="sparkline-label" style="color:#58a6ff">Completion % — Live</p>
+      <canvas id="live-completion" height="80"></canvas>
+    </div>
+
+    <div class="sparkline-card">
+      <p class="sparkline-label" style="color:#f0883e">CPU Usage % — Live</p>
+      <canvas id="live-cpu" height="80"></canvas>
+    </div>
+
+    <div class="sparkline-card">
+      <p class="sparkline-label" style="color:#3fb950">Iterations — Live</p>
+      <canvas id="live-iterations" height="80"></canvas>
+    </div>
+
+  </div>
+
+  <!-- Static PNG graphs (shown after solve completes) -->
+  <div class="static-graphs-grid">
+
+    <div class="graph-card hidden">
+      <p class="graph-card-label" style="color:#58a6ff">Completion % vs Time</p>
+      <img id="graph-img-completion" src="" alt="Completion graph" class="graph-img" />
+    </div>
+
+    <div class="graph-card hidden">
+      <p class="graph-card-label" style="color:#f0883e">CPU Usage % vs Time</p>
+      <img id="graph-img-cpu" src="" alt="CPU usage graph" class="graph-img" />
+    </div>
+
+    <div class="graph-card hidden">
+      <p class="graph-card-label" style="color:#3fb950">Iterations vs Time</p>
+      <img id="graph-img-iterations" src="" alt="Iterations graph" class="graph-img" />
+    </div>
+
+    <div class="graph-card hidden">
+      <p class="graph-card-label" style="color:#8957e5">Remaining % vs Time</p>
+      <img id="graph-img-remaining" src="" alt="Remaining graph" class="graph-img" />
+    </div>
+
+    <div class="graph-card hidden" style="grid-column: 1 / -1">
+      <p class="graph-card-label" style="color:#d29922">AES-EAX vs Time-Lock Comparison</p>
+      <img id="graph-img-comparison" src="" alt="Comparison graph" class="graph-img" />
+    </div>
+
+  </div>
+
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     BLOCK B — Performance Dashboard Tab Content
+     Add tab button: <button class="tab-btn" data-tab="dashboard">Dashboard</button>
+     Then paste this as a sibling .tab-content:
+     ═══════════════════════════════════════════════════════════════════════════ -->
+
+<div id="dashboard" class="tab-content hidden">
+
+  <h2 class="dashboard-title">Performance Dashboard</h2>
+  <p class="dashboard-subtitle">
+    Real-time telemetry, historical comparisons, and multi-delay benchmarks
+    for the Rivest-Shamir-Wagner time-lock puzzle solver.
+  </p>
+
+  <!-- ── Historical Chart (existing Chart.js graph) ───────────────────────── -->
+  <section class="dash-section">
+    <h3 class="dash-section-title">Historical Solver Runs</h3>
+    <p class="dash-section-sub">Target delay vs actual computation time across all recorded decryptions.</p>
+    <div class="chartjs-wrap">
+      <canvas id="perfChart"></canvas>
+    </div>
+  </section>
+
+  <!-- ── Multi-Delay Benchmark ─────────────────────────────────────────────── -->
+  <section class="dash-section">
+    <h3 class="dash-section-title">Multi-Delay Benchmark</h3>
+    <p class="dash-section-sub">
+      Run fresh puzzles at several delay targets and plot how computation time scales.
+      <strong>Note:</strong> benchmark runs in a background thread — page stays responsive.
+    </p>
+
+    <!-- Delay selector pills -->
+    <div class="delay-picker">
+      <span class="delay-picker-label">Quick delays (s):</span>
+      <button class="delay-pill active" data-delay="1">1s</button>
+      <button class="delay-pill active" data-delay="5">5s</button>
+      <button class="delay-pill" data-delay="10">10s</button>
+      <button class="delay-pill" data-delay="20">20s</button>
+      <button class="delay-pill" data-delay="30">30s</button>
+    </div>
+
+    <div class="custom-delay-row">
+      <label class="custom-delay-label" for="custom-delays">Custom (comma-separated):</label>
+      <input id="custom-delays" type="text" placeholder="e.g. 2, 8, 15"
+             class="custom-delay-input" />
+    </div>
+
+    <button id="benchmark-start-btn" class="primary-btn" style="margin-top:1rem">
+      ▶ Run Benchmark
+    </button>
+    <p id="benchmark-msg" class="hidden" style="margin-top:0.75rem; font-size:0.85rem"></p>
+
+    <div id="benchmark-graphs-box" class="hidden" style="margin-top:1.25rem">
+      <div id="benchmark-img-wrap" class="hidden">
+        <p class="graph-card-label" style="color:#58a6ff">
+          Target Delay vs Actual CPU Time
+        </p>
+        <img id="benchmark-img" src="" alt="Benchmark graph" class="graph-img" />
+      </div>
+    </div>
+  </section>
+
+  <!-- ── About ──────────────────────────────────────────────────────────────── -->
+  <section class="dash-section">
+    <h3 class="dash-section-title">About the Telemetry System</h3>
+    <div class="about-grid">
+      <div class="about-card">
+        <div class="about-icon">⏱</div>
+        <h4>Non-Blocking Sampling</h4>
+        <p>A dedicated CPU-sampling daemon thread fires every 500 ms. The solver loop
+           never waits for psutil reads.</p>
+      </div>
+      <div class="about-card">
+        <div class="about-icon">📊</div>
+        <h4>5 Graph Types</h4>
+        <p>Completion %, CPU Usage, Iterations, Remaining %, and AES vs Time-Lock
+           comparison — all rendered with matplotlib post-solve.</p>
+      </div>
+      <div class="about-card">
+        <div class="about-icon">🔀</div>
+        <h4>Three-Thread Design</h4>
+        <p>Solver thread → CPU sampler daemon → graph renderer daemon.
+           Flask workers are never blocked at any stage.</p>
+      </div>
+      <div class="about-card">
+        <div class="about-icon">📏</div>
+        <h4>AES Baseline</h4>
+        <p>After puzzle completion, a plain AES-EAX decrypt is timed to give a
+           meaningful comparison against the time-lock overhead.</p>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     BLOCK C — CSS (paste into your <style> tag or stylesheet)
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<style>
+/* ── Perf graphs panel (decrypt tab) ──────────────────────────────────────── */
+.perf-graphs-panel {
+  margin-top: 1.75rem;
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 10px;
+  padding: 1.25rem 1.4rem;
+}
+
+.perf-graphs-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.perf-graphs-title {
+  color: #c9d1d9;
+  font-size: 0.92rem;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-weight: 600;
+}
+
+.perf-status-msg {
+  color: #8b949e;
+  font-size: 0.78rem;
+  margin: 0 0 1rem;
+}
+
+.ghost-btn {
+  background: #21262d;
+  color: #8b949e;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  padding: 3px 11px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+.ghost-btn:hover { color: #c9d1d9; border-color: #8b949e; }
+
+/* Sparklines */
+.sparkline-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.85rem;
+  margin-bottom: 1.25rem;
+}
+
+.sparkline-card {
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  padding: 0.75rem 0.9rem;
+}
+
+.sparkline-label {
+  font-size: 0.75rem;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  margin: 0 0 0.5rem;
+}
+
+/* Static graph grid */
+.static-graphs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 1rem;
+}
+
+.graph-card {
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  padding: 0.85rem;
+}
+
+.graph-card-label {
+  font-size: 0.78rem;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  margin: 0 0 0.6rem;
+}
+
+.graph-img {
+  width: 100%;
+  border-radius: 6px;
+  display: block;
+}
+
+/* ── Dashboard tab ─────────────────────────────────────────────────────────── */
+.dashboard-title {
+  color: #c9d1d9;
+  font-size: 1.2rem;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  margin: 0 0 0.35rem;
+}
+
+.dashboard-subtitle {
+  color: #8b949e;
+  font-size: 0.85rem;
+  margin: 0 0 1.75rem;
+  max-width: 640px;
+  line-height: 1.55;
+}
+
+.dash-section {
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 10px;
+  padding: 1.25rem 1.4rem;
+  margin-bottom: 1.25rem;
+}
+
+.dash-section-title {
+  color: #c9d1d9;
+  font-size: 0.95rem;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-weight: 600;
+  margin: 0 0 0.3rem;
+}
+
+.dash-section-sub {
+  color: #8b949e;
+  font-size: 0.82rem;
+  margin: 0 0 1rem;
+  line-height: 1.5;
+}
+
+.chartjs-wrap { position: relative; height: 220px; }
+
+/* Delay picker */
+.delay-picker {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.delay-picker-label {
+  color: #8b949e;
+  font-size: 0.82rem;
+}
+
+.delay-pill {
+  background: #21262d;
+  color: #8b949e;
+  border: 1px solid #30363d;
+  border-radius: 20px;
+  padding: 3px 13px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.delay-pill.active {
+  background: rgba(88, 166, 255, 0.15);
+  color: #58a6ff;
+  border-color: #58a6ff;
+}
+
+.delay-pill:hover { border-color: #58a6ff; color: #58a6ff; }
+
+.custom-delay-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.custom-delay-label {
+  color: #8b949e;
+  font-size: 0.82rem;
+}
+
+.custom-delay-input {
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  color: #c9d1d9;
+  padding: 5px 10px;
+  font-size: 0.82rem;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  width: 200px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.custom-delay-input:focus { border-color: #58a6ff; }
+
+.primary-btn {
+  background: #238636;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 7px 18px;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.primary-btn:hover    { background: #2ea043; }
+.primary-btn:disabled { background: #21262d; color: #484f58; cursor: not-allowed; }
+
+/* About grid */
+.about-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.85rem;
+}
+
+.about-card {
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.about-icon {
+  font-size: 1.4rem;
+  margin-bottom: 0.5rem;
+}
+
+.about-card h4 {
+  color: #c9d1d9;
+  font-size: 0.85rem;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  margin: 0 0 0.4rem;
+}
+
+.about-card p {
+  color: #8b949e;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  margin: 0;
+}
+</style>

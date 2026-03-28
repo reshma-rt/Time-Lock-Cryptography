@@ -1,0 +1,51 @@
+<!--
+  ╔═══════════════════════════════════════════════════════════════════════╗
+  ║  PERFORMANCE GRAPHS PANEL — paste this block into your decrypt tab,  ║
+  ║  below the #decryption-ready-box div in your index.html.             ║
+  ╚═══════════════════════════════════════════════════════════════════════╝
+-->
+
+<!-- Performance Graphs Panel (hidden until graphs are ready) -->
+<div id="perf-graphs-box" class="hidden" style="margin-top:1.5rem;">
+
+  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.75rem;">
+    <h3 style="color:#c9d1d9; font-size:0.95rem; margin:0;">
+      📊 Solver Performance Telemetry
+    </h3>
+    <button id="graph-poll-btn"
+            style="background:#21262d; color:#8b949e; border:1px solid #30363d;
+                   border-radius:6px; padding:4px 12px; cursor:pointer; font-size:0.8rem;">
+      Refresh Graphs
+    </button>
+  </div>
+
+  <p id="graph-status-msg"
+     style="color:#8b949e; font-size:0.8rem; margin-bottom:1rem;">
+    Waiting for renderer thread...
+  </p>
+
+  <!-- Completion % -->
+  <div style="margin-bottom:1rem;">
+    <p style="color:#58a6ff; font-size:0.8rem; margin:0 0 4px;">Completion % vs Time</p>
+    <img id="graph-img-completion"
+         src="" alt="Completion graph"
+         style="width:100%; border-radius:6px; border:1px solid #30363d;" />
+  </div>
+
+  <!-- CPU Usage -->
+  <div style="margin-bottom:1rem;">
+    <p style="color:#f0883e; font-size:0.8rem; margin:0 0 4px;">CPU Usage % vs Time</p>
+    <img id="graph-img-cpu"
+         src="" alt="CPU usage graph"
+         style="width:100%; border-radius:6px; border:1px solid #30363d;" />
+  </div>
+
+  <!-- Remaining % -->
+  <div>
+    <p style="color:#8957e5; font-size:0.8rem; margin:0 0 4px;">Remaining % vs Time</p>
+    <img id="graph-img-remaining"
+         src="" alt="Remaining graph"
+         style="width:100%; border-radius:6px; border:1px solid #30363d;" />
+  </div>
+
+</div>
